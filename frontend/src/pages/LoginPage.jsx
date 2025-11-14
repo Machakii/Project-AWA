@@ -119,8 +119,8 @@ function LoginForm({ showPassword, setShowPassword }) {
         fname: res.data.fname,
         lname: res.data.lname || "",
         email: res.data.email,
-        phone: res.data.phone || null,      // add default values
-         birthday: res.data.birthday || null, // default empty string
+        phone: res.data.phone || null,
+        birthday: res.data.birthday || null,
       };
 
       localStorage.setItem("user", JSON.stringify(userData));

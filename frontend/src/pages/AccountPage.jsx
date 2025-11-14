@@ -25,12 +25,19 @@ export default function AccountPage() {
 
   const storedUser = JSON.parse(localStorage.getItem("user"));
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (isNaN(date)) return "";
+    return date.toISOString().split("T")[0]; // YYYY-MM-DD
+  };
+
   const [userForm, setUserForm] = useState({
     fname: storedUser?.fname || "",
     lname: storedUser?.lname || "",
     email: storedUser?.email || "",
     phone: storedUser?.phone || "",
-    birthday: storedUser?.birthday || "",
+    birthday: formatDate(storedUser?.birthday), // FIXED
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -86,50 +93,50 @@ export default function AccountPage() {
   };
 
   const handleChangePassword = async () => {
-  try {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (!storedUser || !storedUser.token) {
-      alert("User info missing. Please log in again.");
-      return;
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      if (!storedUser || !storedUser.token) {
+        alert("User info missing. Please log in again.");
+        return;
+      }
+
+      if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+        alert("Please fill all password fields.");
+        return;
+      }
+      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+        alert("New password and confirmation do not match.");
+        return;
+      }
+
+      const payload = {
+        currentPassword: passwordForm.currentPassword.trim(),
+        newPassword: passwordForm.newPassword.trim(),
+      };
+
+      const response = await fetch(`http://localhost:5000/api/users/update-password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${storedUser.token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || "Failed to update password.");
+        return;
+      }
+
+      alert("Password updated successfully!");
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while updating password.");
     }
-
-    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
-      alert("Please fill all password fields.");
-      return;
-    }
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("New password and confirmation do not match.");
-      return;
-    }
-
-    const payload = {
-      currentPassword: passwordForm.currentPassword.trim(),
-      newPassword: passwordForm.newPassword.trim(),
-    };
-
-   const response = await fetch(`http://localhost:5000/api/users/update-password`, {
-  method: "PUT",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${storedUser.token}`,
-  },
-  body: JSON.stringify(payload),
-});
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      alert(result.message || "Failed to update password.");
-      return;
-    }
-
-    alert("Password updated successfully!");
-    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-  } catch (err) {
-    console.error(err);
-    alert("An error occurred while updating password.");
-  }
-};
+  };
 
 
   const handleLogout = () => {
