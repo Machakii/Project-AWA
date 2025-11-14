@@ -14,18 +14,19 @@ import {
 
 import fragrance1 from "../resources/fragrance1.jpg";
 
-export default function AdminAccount() {    
+export default function AdminAccount() {
     const [activeTab, setActiveTab] = useState("products");
+    const [modalOpen, setModalOpen] = useState(false);
     const navigate = useNavigate();
 
-  const storedUser = JSON.parse(localStorage.getItem("user"));
+    const storedUser = JSON.parse(localStorage.getItem("user"));
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/");
-  };
-    
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/");
+    };
+
     // Mock data
     const [products, setProducts] = useState([
         { id: "p1", name: "Rose Perfume", price: 24.99, stock: 12, image: fragrance1 },
@@ -219,92 +220,24 @@ export default function AdminAccount() {
 
                     {/* PRODUCTS TAB */}
                     {activeTab === "products" && (
-                        <section className="bg-white rounded-2xl p-6 shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-semibold text-gray-800">Products</h3>
-                            </div>
+                        <section className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Products</h3>
 
-                            {/* Add / Edit Form */}
-                            <div className="mb-6 border border-rose-50 p-4 rounded-lg">
-
-
-                                {/* Image Upload */}
-                                <div className="mb-4 flex flex-col md:flex-row gap-3 items-center">
-                                    <label className="flex items-center gap-2 cursor-pointer text-gray-700 bg-rose-100 px-3 py-2 rounded-lg hover:bg-rose-200 transition">
-                                        <Camera size={16} />
-                                        Upload Image
-                                        <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                                    </label>
-                                    {productForm.image && (
-                                        <img
-                                            src={productForm.image}
-                                            alt="Preview"
-                                            className="w-20 h-20 object-cover rounded-lg border"
-                                        />
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
-                                    <input
-                                        value={productForm.name}
-                                        onChange={(e) => setProductForm((s) => ({ ...s, name: e.target.value }))}
-                                        className="px-3 py-2 text-black rounded-lg border"
-                                        placeholder="Product name"
-                                    />
-                                    <input
-                                        value={productForm.price}
-                                        onChange={(e) => setProductForm((s) => ({ ...s, price: e.target.value }))}
-                                        className="px-3 py-2 text-black rounded-lg border"
-                                        placeholder="Price"
-                                        type="number"
-                                        step="0.01"
-                                    />
-                                    <input
-                                        value={productForm.stock}
-                                        onChange={(e) => setProductForm((s) => ({ ...s, stock: e.target.value }))}
-                                        className="px-3 py-2 text-black rounded-lg border"
-                                        placeholder="Stock"
-                                        type="number"
-                                    />
-                                </div>
-
-
-
-                                {/* Buttons */}
-                                <div className="mt-3 flex gap-2">
-                                    {editingProduct ? (
-                                        <>
-                                            <button
-                                                onClick={handleSaveEdit}
-                                                className="bg-pink-500 text-white px-4 py-2 rounded-lg"
-                                            >
-                                                Save
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    resetProductForm();
-                                                    setEditingProduct(null);
-                                                }}
-                                                className="bg-gray-100 px-4 py-2 rounded-lg"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <button
-                                            onClick={handleAddProduct}
-                                            className="flex items-center gap-2 bg-rose-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-rose-200 transition text-sm"
-                                        >
-                                            <Plus size={14} />
-                                            Add Product
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
+                            {/* Add Product Button */}
+                            <button
+                                onClick={() => {
+                                    resetProductForm();
+                                    setEditingProduct(null);
+                                    setModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 bg-rose-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-rose-200 transition text-sm mb-4"
+                            >
+                                <Plus size={14} />
+                                Add Product
+                            </button>
 
                             {/* Product List */}
-                            <div className="space-y-3">
+                            <div className="w-full space-y-3">
                                 {products.map((p) => (
                                     <div
                                         key={p.id}
@@ -323,11 +256,25 @@ export default function AdminAccount() {
                                                 <div className="text-sm text-gray-600">
                                                     ${p.price.toFixed(2)} • Stock: {p.stock}
                                                 </div>
+                                                {p.sizes && p.sizes.length > 0 && (
+                                                    <div className="text-sm text-gray-500">
+                                                        Sizes: {p.sizes.map(s => `${s.label} ($${s.price})`).join(", ")}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => handleStartEdit(p)}
+                                                onClick={() => {
+                                                    setEditingProduct(p.id);
+                                                    setProductForm({
+                                                        ...p,
+                                                        price: String(p.price),
+                                                        stock: String(p.stock),
+                                                        sizes: p.sizes || [],
+                                                    });
+                                                    setModalOpen(true);
+                                                }}
                                                 className="flex items-center gap-2 px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-50"
                                             >
                                                 <Edit2 size={14} /> Edit
@@ -342,8 +289,209 @@ export default function AdminAccount() {
                                     </div>
                                 ))}
                             </div>
+
+                            {modalOpen && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+    <div className="bg-white rounded-2xl w-full max-w-2xl relative max-h-[90vh] flex flex-col">
+      {/* Close button */}
+      <button
+        onClick={() => setModalOpen(false)}
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 z-10"
+      >
+        ✕
+      </button>
+
+      {/* Scrollable content */}
+      <div
+        className="overflow-y-auto p-6 flex-1"
+        style={{
+          scrollbarWidth: "thin", // Firefox
+          scrollbarColor: "#FBCFE8 #F3F4F6", // Firefox thumb color #FBCFE8, track #F3F4F6
+        }}
+      >
+        <style>
+          {`
+            /* Chrome, Edge, Safari */
+            .scrollbar::-webkit-scrollbar {
+              width: 8px;
+            }
+            .scrollbar::-webkit-scrollbar-track {
+              background: #F3F4F6; /* light gray track */
+              border-radius: 9999px;
+            }
+            .scrollbar::-webkit-scrollbar-thumb {
+              background-color: #FBCFE8; /* rose/pink thumb */
+              border-radius: 9999px;
+            }
+            .scrollbar::-webkit-scrollbar-thumb:hover {
+              background-color: #F472B6; /* darker rose on hover */
+            }
+          `}
+        </style>
+
+        <div className="scrollbar">
+          <h4 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+            {editingProduct ? "Edit Product" : "Add Product"}
+          </h4>
+
+          {/* Image Upload Centered */}
+          <div className="flex flex-col items-center mb-6">
+            {productForm.image && (
+              <img
+                src={productForm.image}
+                alt="Preview"
+                className="w-32 h-32 object-cover rounded-lg border mb-3"
+              />
+            )}
+            <label className="flex items-center gap-2 cursor-pointer text-gray-700 bg-rose-100 px-4 py-2 rounded-lg hover:bg-rose-200 transition">
+              <Camera size={16} />
+              {editingProduct ? "Change Image" : "Upload Image"}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {/* Product Details Inputs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input
+              value={productForm.name}
+              onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+              className="px-3 py-2 text-black rounded-lg border"
+              placeholder="Product Name"
+            />
+            <input
+              value={productForm.category}
+              onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+              className="px-3 py-2 text-black rounded-lg border"
+              placeholder="Category"
+            />
+            <input
+              value={productForm.price}
+              onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+              className="px-3 py-2 text-black rounded-lg border"
+              placeholder="Price"
+              type="number"
+              step="0.01"
+            />
+            <input
+              value={productForm.tag}
+              onChange={(e) => setProductForm({ ...productForm, tag: e.target.value })}
+              className="px-3 py-2 text-black rounded-lg border"
+              placeholder="Tag"
+            />
+            <input
+              value={productForm.stock}
+              onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
+              className="px-3 py-2 text-black rounded-lg border"
+              placeholder="Stock"
+              type="number"
+            />
+            <textarea
+              value={productForm.description}
+              onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+              className="px-3 py-2 text-black rounded-lg border col-span-2"
+              placeholder="Description"
+            />
+            <textarea
+              value={productForm.note}
+              onChange={(e) => setProductForm({ ...productForm, note: e.target.value })}
+              className="px-3 py-2 text-black rounded-lg border col-span-2"
+              placeholder="Note"
+            />
+            <textarea
+              value={productForm.returnPolicy}
+              onChange={(e) => setProductForm({ ...productForm, returnPolicy: e.target.value })}
+              className="px-3 py-2 text-black rounded-lg border col-span-2"
+              placeholder="Return Policy"
+            />
+
+            {/* Sizes */}
+            <div className="col-span-2">
+              <label className="font-medium text-gray-700 mb-1 block">Sizes</label>
+              {productForm.sizes?.map((size, idx) => (
+                <div key={idx} className="flex gap-2 mb-2">
+                  <input
+                    value={size.label}
+                    onChange={(e) => {
+                      const newSizes = [...productForm.sizes];
+                      newSizes[idx].label = e.target.value;
+                      setProductForm({ ...productForm, sizes: newSizes });
+                    }}
+                    className="px-3 py-2 text-black rounded-lg border flex-1"
+                    placeholder="Label (e.g., Small)"
+                  />
+                  <input
+                    value={size.price}
+                    onChange={(e) => {
+                      const newSizes = [...productForm.sizes];
+                      newSizes[idx].price = e.target.value;
+                      setProductForm({ ...productForm, sizes: newSizes });
+                    }}
+                    className="px-3 py-2 text-black rounded-lg border w-24"
+                    placeholder="Price"
+                    type="number"
+                    step="0.01"
+                  />
+                  <button
+                    onClick={() => {
+                      const newSizes = productForm.sizes.filter((_, i) => i !== idx);
+                      setProductForm({ ...productForm, sizes: newSizes });
+                    }}
+                    className="px-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => {
+                  const newSizes = [...(productForm.sizes || []), { id: Date.now(), label: "", price: "" }];
+                  setProductForm({ ...productForm, sizes: newSizes });
+                }}
+                className="px-3 py-2 bg-rose-100 rounded-lg hover:bg-rose-200 text-gray-700 text-sm"
+              >
+                Add Size
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Buttons */}
+      <div className="mt-4 flex justify-center gap-2 p-4 border-t">
+        <button
+          onClick={() => setModalOpen(false)}
+          className="bg-gray-100 px-4 py-2 rounded-lg"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() => {
+            if (editingProduct) handleSaveEdit();
+            else handleAddProduct();
+            setModalOpen(false);
+          }}
+          className="bg-pink-500 text-white px-4 py-2 rounded-lg"
+        >
+          {editingProduct ? "Save Changes" : "Add Product"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
                         </section>
                     )}
+
+
+
 
                     {/* ORDERS TAB */}
                     {activeTab === "orders" && (
@@ -375,7 +523,7 @@ export default function AdminAccount() {
                                                         <p>• ${o.total.toFixed(2)}</p>
                                                         <p>• Status: {o.status}</p>
                                                     </div>
-                                                
+
                                                 </div>
                                             </div>
                                             <button className="flex items-center mt-4 text-black gap-2 px-3 py-2 bg-white rounded-lg hover:bg-gray-50">

@@ -11,6 +11,7 @@ const productSchema = new mongoose.Schema({
     reviews: Number,
     note: String,
     returnPolicy: String,
+    stock: Number,
     sizes: [
     {
       id: Number,
