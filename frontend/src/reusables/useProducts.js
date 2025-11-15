@@ -22,5 +22,5 @@ export default function useProducts() {
     fetchProducts();
   }, []);
 
-  return { products, loading };
+  return { products, setProducts, loading };
 }

@@ -13,10 +13,13 @@ import {
 } from "lucide-react";
 
 import fragrance1 from "../resources/fragrance1.jpg";
+import useProducts from "../reusables/useProducts";
 
 export default function AdminAccount() {
     const [activeTab, setActiveTab] = useState("products");
     const [modalOpen, setModalOpen] = useState(false);
+    const { products, setProducts } = useProducts();
+
     const navigate = useNavigate();
 
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -28,10 +31,10 @@ export default function AdminAccount() {
     };
 
     // Mock data
-    const [products, setProducts] = useState([
-        { id: "p1", name: "Rose Perfume", price: 24.99, stock: 12, image: fragrance1 },
-        { id: "p2", name: "Citrus Body Mist", price: 14.5, stock: 30, image: fragrance1 },
-    ]);
+    // const [products, setProducts] = useState([
+    //     { id: "p1", name: "Rose Perfume", price: 24.99, stock: 12, image: fragrance1 },
+    //     { id: "p2", name: "Citrus Body Mist", price: 14.5, stock: 30, image: fragrance1 },
+    // ]);
 
     const [orders] = useState([
         { id: "o1", customer: "Jane Doe", productId: "p1", total: 24.99, status: "Processing" },
@@ -52,34 +55,57 @@ export default function AdminAccount() {
     // Handle product image upload
     const handleImageChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setProductForm((prev) => ({ ...prev, image: reader.result }));
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        setProductForm(prev => ({ ...prev, imageFile: file }));
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setProductForm(prev => ({ ...prev, image: reader.result }));
+        };
+        reader.readAsDataURL(file);
+    };
+
+
+    // Add product
+    const handleAddProduct = async () => {
+        try {
+            const formData = new FormData();
+            formData.append("name", productForm.name);
+            formData.append("category", productForm.category || "");
+            formData.append("price", productForm.price);
+            formData.append("stock", productForm.stock);
+            formData.append("tag", productForm.tag || "");
+            formData.append("description", productForm.description || "");
+            formData.append("note", productForm.note || "");
+            formData.append("returnPolicy", productForm.returnPolicy || "");
+            formData.append("sizes", JSON.stringify(productForm.sizes || []));
+
+            if (productForm.imageFile) formData.append("image", productForm.imageFile);
+
+            const res = await fetch("http://localhost:5000/api/products/add", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error("Failed to add product");
+            const saved = await res.json();
+
+            alert("Product Added successfully!");
+            setProducts(prev => [saved, ...prev]);
+            resetProductForm();
+        } catch (err) {
+            console.error("Add error:", err);
         }
     };
 
-    // Add product
-    const handleAddProduct = () => {
-        if (!productForm.name) return;
-        const newProduct = {
-            id: `p${Date.now()}`,
-            name: productForm.name,
-            price: parseFloat(productForm.price) || 0,
-            stock: parseInt(productForm.stock) || 0,
-            image: productForm.image || fragrance1,
-        };
-        setProducts((prev) => [newProduct, ...prev]);
-        resetProductForm();
-    };
+
 
     // Start editing
     const handleStartEdit = (p) => {
-        setEditingProduct(p.id);
+        setEditingProduct(p._id);
         setProductForm({
-            id: p.id,
+            id: p._id,
             name: p.name,
             price: String(p.price),
             stock: String(p.stock),
@@ -88,29 +114,57 @@ export default function AdminAccount() {
     };
 
     // Save edited product
-    const handleSaveEdit = () => {
-        setProducts((list) =>
-            list.map((p) =>
-                p.id === editingProduct
-                    ? {
-                        ...p,
-                        ...productForm,
-                        price: parseFloat(productForm.price),
-                        stock: parseInt(productForm.stock),
-                    }
-                    : p
-            )
-        );
-        setEditingProduct(null);
-        resetProductForm();
-    };
+    const handleSaveEdit = async () => {
+        try {
+            const formData = new FormData();
+            formData.append("name", productForm.name);
+            formData.append("category", productForm.category || "");
+            formData.append("price", productForm.price);
+            formData.append("stock", productForm.stock);
+            formData.append("tag", productForm.tag || "");
+            formData.append("description", productForm.description || "");
+            formData.append("note", productForm.note || "");
+            formData.append("returnPolicy", productForm.returnPolicy || "");
+            formData.append("sizes", JSON.stringify(productForm.sizes || []));
 
-    // Delete product
-    const handleDeleteProduct = (id) => {
-        if (confirm("Delete this product?")) {
-            setProducts((list) => list.filter((p) => p.id !== id));
+            if (productForm.imageFile) formData.append("image", productForm.imageFile);
+
+            const res = await fetch(`http://localhost:5000/api/products/edit/${editingProduct}`, {
+                method: "PUT",
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error("Failed to edit product");
+            const updated = await res.json();
+
+            setProducts(prev => prev.map(p => (p._id === editingProduct ? updated : p)));
+
+            alert("Product Edited successfully!");
+            setEditingProduct(null);
+            resetProductForm();
+        } catch (err) {
+            console.error("Edit error:", err);
         }
     };
+
+
+
+    // Delete product
+    const handleDeleteProduct = async (id) => {
+        if (!confirm("Delete this product?")) return;
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/products/delete/${id}`, {
+                method: "DELETE",
+            });
+
+            if (!res.ok) throw new Error("Failed to delete product");
+            setProducts(prev => prev.filter(p => p._id !== id));
+        } catch (err) {
+            console.error("Delete error:", err);
+        }
+    };
+
 
     // Toggle user role
     const handleToggleRole = (id) => {
@@ -227,7 +281,7 @@ export default function AdminAccount() {
                             <button
                                 onClick={() => {
                                     resetProductForm();
-                                    setEditingProduct(null);
+                                    setEditingProduct(null); // clearly indicate "adding"
                                     setModalOpen(true);
                                 }}
                                 className="flex items-center gap-2 bg-rose-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-rose-200 transition text-sm mb-4"
@@ -240,7 +294,7 @@ export default function AdminAccount() {
                             <div className="w-full space-y-3">
                                 {products.map((p) => (
                                     <div
-                                        key={p.id}
+                                        key={p._id}
                                         className="flex flex-col gap-3 items-center justify-between md:flex-row bg-rose-50 p-3 rounded-lg"
                                     >
                                         <div className="flex items-center gap-3">
@@ -266,21 +320,22 @@ export default function AdminAccount() {
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => {
-                                                    setEditingProduct(p.id);
+                                                    setEditingProduct(p._id); // indicate "editing"
                                                     setProductForm({
                                                         ...p,
                                                         price: String(p.price),
                                                         stock: String(p.stock),
                                                         sizes: p.sizes || [],
                                                     });
-                                                    setModalOpen(true);
+                                                    setModalOpen(true); // open modal
                                                 }}
                                                 className="flex items-center gap-2 px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-50"
                                             >
                                                 <Edit2 size={14} /> Edit
                                             </button>
+
                                             <button
-                                                onClick={() => handleDeleteProduct(p.id)}
+                                                onClick={() => handleDeleteProduct(p._id)}
                                                 className="flex items-center gap-2 px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-50"
                                             >
                                                 <Trash2 size={14} /> Delete
@@ -291,26 +346,26 @@ export default function AdminAccount() {
                             </div>
 
                             {modalOpen && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-    <div className="bg-white rounded-2xl w-full max-w-2xl relative max-h-[90vh] flex flex-col">
-      {/* Close button */}
-      <button
-        onClick={() => setModalOpen(false)}
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 z-10"
-      >
-        ✕
-      </button>
+                                <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+                                    <div className="bg-white rounded-2xl w-full max-w-2xl relative max-h-[90vh] flex flex-col">
+                                        {/* Close button */}
+                                        <button
+                                            onClick={() => setModalOpen(false)}
+                                            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 z-10"
+                                        >
+                                            ✕
+                                        </button>
 
-      {/* Scrollable content */}
-      <div
-        className="overflow-y-auto p-6 flex-1"
-        style={{
-          scrollbarWidth: "thin", // Firefox
-          scrollbarColor: "#FBCFE8 #F3F4F6", // Firefox thumb color #FBCFE8, track #F3F4F6
-        }}
-      >
-        <style>
-          {`
+                                        {/* Scrollable content */}
+                                        <div
+                                            className="overflow-y-auto p-6 flex-1"
+                                            style={{
+                                                scrollbarWidth: "thin", // Firefox
+                                                scrollbarColor: "#FBCFE8 #F3F4F6", // Firefox thumb color #FBCFE8, track #F3F4F6
+                                            }}
+                                        >
+                                            <style>
+                                                {`
             /* Chrome, Edge, Safari */
             .scrollbar::-webkit-scrollbar {
               width: 8px;
@@ -327,162 +382,162 @@ export default function AdminAccount() {
               background-color: #F472B6; /* darker rose on hover */
             }
           `}
-        </style>
+                                            </style>
 
-        <div className="scrollbar">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-            {editingProduct ? "Edit Product" : "Add Product"}
-          </h4>
+                                            <div className="scrollbar">
+                                                <h4 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                                    {editingProduct ? "Edit Product" : "Add Product"}
+                                                </h4>
 
-          {/* Image Upload Centered */}
-          <div className="flex flex-col items-center mb-6">
-            {productForm.image && (
-              <img
-                src={productForm.image}
-                alt="Preview"
-                className="w-32 h-32 object-cover rounded-lg border mb-3"
-              />
-            )}
-            <label className="flex items-center gap-2 cursor-pointer text-gray-700 bg-rose-100 px-4 py-2 rounded-lg hover:bg-rose-200 transition">
-              <Camera size={16} />
-              {editingProduct ? "Change Image" : "Upload Image"}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-            </label>
-          </div>
+                                                {/* Image Upload Centered */}
+                                                <div className="flex flex-col items-center mb-6">
+                                                    {productForm.image && (
+                                                        <img
+                                                            src={productForm.image}
+                                                            alt="Preview"
+                                                            className="w-32 h-32 object-cover rounded-lg border mb-3"
+                                                        />
+                                                    )}
+                                                    <label className="flex items-center gap-2 cursor-pointer text-gray-700 bg-rose-100 px-4 py-2 rounded-lg hover:bg-rose-200 transition">
+                                                        <Camera size={16} />
+                                                        {editingProduct ? "Change Image" : "Upload Image"}
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleImageChange}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                </div>
 
-          {/* Product Details Inputs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input
-              value={productForm.name}
-              onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-              className="px-3 py-2 text-black rounded-lg border"
-              placeholder="Product Name"
-            />
-            <input
-              value={productForm.category}
-              onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-              className="px-3 py-2 text-black rounded-lg border"
-              placeholder="Category"
-            />
-            <input
-              value={productForm.price}
-              onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-              className="px-3 py-2 text-black rounded-lg border"
-              placeholder="Price"
-              type="number"
-              step="0.01"
-            />
-            <input
-              value={productForm.tag}
-              onChange={(e) => setProductForm({ ...productForm, tag: e.target.value })}
-              className="px-3 py-2 text-black rounded-lg border"
-              placeholder="Tag"
-            />
-            <input
-              value={productForm.stock}
-              onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
-              className="px-3 py-2 text-black rounded-lg border"
-              placeholder="Stock"
-              type="number"
-            />
-            <textarea
-              value={productForm.description}
-              onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-              className="px-3 py-2 text-black rounded-lg border col-span-2"
-              placeholder="Description"
-            />
-            <textarea
-              value={productForm.note}
-              onChange={(e) => setProductForm({ ...productForm, note: e.target.value })}
-              className="px-3 py-2 text-black rounded-lg border col-span-2"
-              placeholder="Note"
-            />
-            <textarea
-              value={productForm.returnPolicy}
-              onChange={(e) => setProductForm({ ...productForm, returnPolicy: e.target.value })}
-              className="px-3 py-2 text-black rounded-lg border col-span-2"
-              placeholder="Return Policy"
-            />
+                                                {/* Product Details Inputs */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <input
+                                                        value={productForm.name}
+                                                        onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                                                        className="px-3 py-2 text-black rounded-lg border"
+                                                        placeholder="Product Name"
+                                                    />
+                                                    <input
+                                                        value={productForm.category}
+                                                        onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                                                        className="px-3 py-2 text-black rounded-lg border"
+                                                        placeholder="Category"
+                                                    />
+                                                    <input
+                                                        value={productForm.price}
+                                                        onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                                                        className="px-3 py-2 text-black rounded-lg border"
+                                                        placeholder="Price"
+                                                        type="number"
+                                                        step="0.01"
+                                                    />
+                                                    <input
+                                                        value={productForm.tag}
+                                                        onChange={(e) => setProductForm({ ...productForm, tag: e.target.value })}
+                                                        className="px-3 py-2 text-black rounded-lg border"
+                                                        placeholder="Tag"
+                                                    />
+                                                    <input
+                                                        value={productForm.stock}
+                                                        onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
+                                                        className="px-3 py-2 text-black rounded-lg border"
+                                                        placeholder="Stock"
+                                                        type="number"
+                                                    />
+                                                    <textarea
+                                                        value={productForm.description}
+                                                        onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                                                        className="px-3 py-2 text-black rounded-lg border col-span-2"
+                                                        placeholder="Description"
+                                                    />
+                                                    <textarea
+                                                        value={productForm.note}
+                                                        onChange={(e) => setProductForm({ ...productForm, note: e.target.value })}
+                                                        className="px-3 py-2 text-black rounded-lg border col-span-2"
+                                                        placeholder="Note"
+                                                    />
+                                                    <textarea
+                                                        value={productForm.returnPolicy}
+                                                        onChange={(e) => setProductForm({ ...productForm, returnPolicy: e.target.value })}
+                                                        className="px-3 py-2 text-black rounded-lg border col-span-2"
+                                                        placeholder="Return Policy"
+                                                    />
 
-            {/* Sizes */}
-            <div className="col-span-2">
-              <label className="font-medium text-gray-700 mb-1 block">Sizes</label>
-              {productForm.sizes?.map((size, idx) => (
-                <div key={idx} className="flex gap-2 mb-2">
-                  <input
-                    value={size.label}
-                    onChange={(e) => {
-                      const newSizes = [...productForm.sizes];
-                      newSizes[idx].label = e.target.value;
-                      setProductForm({ ...productForm, sizes: newSizes });
-                    }}
-                    className="px-3 py-2 text-black rounded-lg border flex-1"
-                    placeholder="Label (e.g., Small)"
-                  />
-                  <input
-                    value={size.price}
-                    onChange={(e) => {
-                      const newSizes = [...productForm.sizes];
-                      newSizes[idx].price = e.target.value;
-                      setProductForm({ ...productForm, sizes: newSizes });
-                    }}
-                    className="px-3 py-2 text-black rounded-lg border w-24"
-                    placeholder="Price"
-                    type="number"
-                    step="0.01"
-                  />
-                  <button
-                    onClick={() => {
-                      const newSizes = productForm.sizes.filter((_, i) => i !== idx);
-                      setProductForm({ ...productForm, sizes: newSizes });
-                    }}
-                    className="px-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={() => {
-                  const newSizes = [...(productForm.sizes || []), { id: Date.now(), label: "", price: "" }];
-                  setProductForm({ ...productForm, sizes: newSizes });
-                }}
-                className="px-3 py-2 bg-rose-100 rounded-lg hover:bg-rose-200 text-gray-700 text-sm"
-              >
-                Add Size
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+                                                    {/* Sizes */}
+                                                    <div className="col-span-2">
+                                                        <label className="font-medium text-gray-700 mb-1 block">Sizes</label>
+                                                        {productForm.sizes?.map((size, idx) => (
+                                                            <div key={idx} className="flex gap-2 mb-2">
+                                                                <input
+                                                                    value={size.label}
+                                                                    onChange={(e) => {
+                                                                        const newSizes = [...productForm.sizes];
+                                                                        newSizes[idx].label = e.target.value;
+                                                                        setProductForm({ ...productForm, sizes: newSizes });
+                                                                    }}
+                                                                    className="px-3 py-2 text-black rounded-lg border flex-1"
+                                                                    placeholder="Label (e.g., Small)"
+                                                                />
+                                                                <input
+                                                                    value={size.price}
+                                                                    onChange={(e) => {
+                                                                        const newSizes = [...productForm.sizes];
+                                                                        newSizes[idx].price = e.target.value;
+                                                                        setProductForm({ ...productForm, sizes: newSizes });
+                                                                    }}
+                                                                    className="px-3 py-2 text-black rounded-lg border w-24"
+                                                                    placeholder="Price"
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                />
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const newSizes = productForm.sizes.filter((_, i) => i !== idx);
+                                                                        setProductForm({ ...productForm, sizes: newSizes });
+                                                                    }}
+                                                                    className="px-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-700"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                        <button
+                                                            onClick={() => {
+                                                                const newSizes = [...(productForm.sizes || []), { id: Date.now(), label: "", price: "" }];
+                                                                setProductForm({ ...productForm, sizes: newSizes });
+                                                            }}
+                                                            className="px-3 py-2 bg-rose-100 rounded-lg hover:bg-rose-200 text-gray-700 text-sm"
+                                                        >
+                                                            Add Size
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
 
-      {/* Modal Buttons */}
-      <div className="mt-4 flex justify-center gap-2 p-4 border-t">
-        <button
-          onClick={() => setModalOpen(false)}
-          className="bg-gray-100 px-4 py-2 rounded-lg"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={() => {
-            if (editingProduct) handleSaveEdit();
-            else handleAddProduct();
-            setModalOpen(false);
-          }}
-          className="bg-pink-500 text-white px-4 py-2 rounded-lg"
-        >
-          {editingProduct ? "Save Changes" : "Add Product"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                                        {/* Modal Buttons */}
+                                        <div className="mt-4 flex justify-center gap-2 p-4 border-t">
+                                            <button
+                                                onClick={() => setModalOpen(false)}
+                                                className="bg-gray-100 px-4 py-2 rounded-lg"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    if (editingProduct) await handleSaveEdit(); // editing
+                                                    else await handleAddProduct();            // adding
+                                                    setModalOpen(false);                      // close modal
+                                                }}
+                                                className="bg-pink-500 text-white px-4 py-2 rounded-lg"
+                                            >
+                                                {editingProduct ? "Save Changes" : "Add Product"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
 
 

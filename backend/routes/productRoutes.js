@@ -1,57 +1,75 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/Products");
+const multer = require("multer");
+const path = require("path");
 
-// ADD product
-router.post("/add", async (req, res) => {
+// MULTER STORAGE (save image in backend/uploads)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + path.extname(file.originalname))
+});
+
+const upload = multer({ storage });
+
+// ADD PRODUCT
+router.post("/add", upload.single("image"), async (req, res) => {
   try {
-    const newProduct = new Product(req.body);
+    const productData = {
+      ...req.body,
+      image: req.file
+        ? `http://localhost:5000/uploads/${req.file.filename}`
+        : null,
+      sizes: req.body.sizes ? JSON.parse(req.body.sizes) : []
+    };
+
+    const newProduct = new Product(productData);
     const savedProduct = await newProduct.save();
     res.status(201).json(savedProduct);
   } catch (err) {
-    console.error("Error adding product:", err);
     res.status(500).json({ error: "Failed to add product" });
   }
 });
 
-// GET all products
+// GET ALL PRODUCTS
 router.get("/all", async (req, res) => {
   try {
     const products = await Product.find();
     res.json(products);
   } catch (err) {
-    console.error("Error fetching products:", err);
     res.status(500).json({ error: "Failed to fetch products" });
   }
 });
 
-
-// UPDATE product
-router.put("/edit/:id", async (req, res) => {
+// UPDATE PRODUCT
+router.put("/edit/:id", upload.single("image"), async (req, res) => {
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true } // return updated document
-    );
-    if (!updatedProduct)
-      return res.status(404).json({ error: "Product not found" });
-    res.json(updatedProduct);
+    const updateData = {
+      ...req.body,
+      sizes: req.body.sizes ? JSON.parse(req.body.sizes) : []
+    };
+
+    if (req.file) {
+      updateData.image = `http://localhost:5000/uploads/${req.file.filename}`;
+    }
+
+    const updated = await Product.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+    });
+
+    res.json(updated);
   } catch (err) {
-    console.error("Error updating product:", err);
     res.status(500).json({ error: "Failed to update product" });
   }
 });
 
-// DELETE product
+// DELETE PRODUCT
 router.delete("/delete/:id", async (req, res) => {
   try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-    if (!deletedProduct)
-      return res.status(404).json({ error: "Product not found" });
-    res.json({ message: "Product deleted successfully" });
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: "Product deleted" });
   } catch (err) {
-    console.error("Error deleting product:", err);
     res.status(500).json({ error: "Failed to delete product" });
   }
 });

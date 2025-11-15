@@ -19,6 +19,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin-only', adminRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static("uploads"));
 
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
