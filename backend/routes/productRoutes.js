@@ -24,7 +24,7 @@ router.post("/add", upload.single("image"), async (req, res) => {
       sizes: req.body.sizes ? JSON.parse(req.body.sizes) : []
     };
 
-    const newProduct = new Product(productData);
+    const newProduct = new Product({productData});
     const savedProduct = await newProduct.save();
     res.status(201).json(savedProduct);
   } catch (err) {

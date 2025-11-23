@@ -8,6 +8,10 @@ const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const cartRoutes = require('./routes/cartRoutes')
+const addressRoutes = require('./routes/addressRoutes')
+const wishlistRoutes = require('./routes/wishlistRoutes')
+const orderRoutes = require('./routes/orderRoutes')
 
 //middleware
 
@@ -22,7 +26,11 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/uploads", express.static("uploads"));
 
 app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/address', addressRoutes);
+app.use('/api/orders', orderRoutes);
 
 //mongoDB connection
 mongoose.connect(process.env.MONGO_URI)

@@ -48,4 +48,54 @@ router.put('/update-password', protect, async (req, res) => {
   }
 });
 
+// Get all users
+router.get('/all', async (req, res) => {
+  try {
+    const users = await User.find().select('-password'); // hide password
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete user (Admin only)
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Optional: prevent deleting yourself
+    if (req.user.id === userId) {
+      return res.status(400).json({ message: "You can't delete yourself" });
+    }
+
+    const deletedUser = await User.findByIdAndDelete(userId);
+    if (!deletedUser) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Toggle role (Admin only)
+router.put('/toggle-role/:id', protect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Toggle role
+    user.role = user.role === 'admin' ? 'user' : 'admin';
+    await user.save();
+
+    res.json({ message: 'Role updated successfully', user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 module.exports = router;

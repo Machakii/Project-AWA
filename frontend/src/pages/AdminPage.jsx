@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     User,
@@ -19,6 +19,8 @@ export default function AdminAccount() {
     const [activeTab, setActiveTab] = useState("products");
     const [modalOpen, setModalOpen] = useState(false);
     const { products, setProducts } = useProducts();
+    const [users, setUsers] = useState([]);
+    const [orders, setOrders] = useState([]);
 
     const navigate = useNavigate();
 
@@ -30,21 +32,108 @@ export default function AdminAccount() {
         navigate("/");
     };
 
-    // Mock data
-    // const [products, setProducts] = useState([
-    //     { id: "p1", name: "Rose Perfume", price: 24.99, stock: 12, image: fragrance1 },
-    //     { id: "p2", name: "Citrus Body Mist", price: 14.5, stock: 30, image: fragrance1 },
-    // ]);
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch("http://localhost:5000/api/users/all", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
 
-    const [orders] = useState([
-        { id: "o1", customer: "Jane Doe", productId: "p1", total: 24.99, status: "Processing" },
-        { id: "o2", customer: "Mark Lee", productId: "p2", total: 14.5, status: "Shipped" },
-    ]);
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error("Response error:", errorText);
+                    throw new Error(`Failed to fetch users: ${res.status} - ${errorText}`);
+                }
 
-    const [users, setUsers] = useState([
-        { id: "u1", name: "Sarah Johnson", email: "sarahjohnson@email.com", role: "Customer", image: fragrance1 },
-        { id: "u2", name: "Admin User", email: "admin@example.com", role: "Admin", image: fragrance1 },
-    ]);
+                const data = await res.json();
+                console.log("Fetched users:", data); // Debug log
+
+                // Ensure data is an array
+                if (Array.isArray(data)) {
+                    setUsers(data);
+                    console.log("Users set successfully:", data.length);
+                } else if (data.users && Array.isArray(data.users)) {
+                    // In case your backend returns { users: [...] }
+                    setUsers(data.users);
+                    console.log("Users set successfully:", data.users.length);
+                } else {
+                    console.warn("Unexpected data format:", data);
+                    setUsers([]);
+                }
+            } catch (err) {
+                console.error("Fetch users error:", err);
+                console.error("Full error details:", err);
+            }
+        };
+
+        const fetchOrders = async () => {
+            try {
+                const res = await fetch("http://localhost:5000/api/orders/all", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error("Orders response error:", errorText);
+                    throw new Error(`Failed to fetch orders: ${res.status} - ${errorText}`);
+                }
+
+                const data = await res.json();
+                console.log("Fetched orders:", data);
+
+                if (Array.isArray(data)) {
+                    setOrders(data);
+                    console.log("Orders set successfully:", data.length);
+                } else {
+                    console.warn("Unexpected orders data format:", data);
+                    setOrders([]);
+                }
+            } catch (err) {
+                console.error("Fetch orders error:", err);
+            }
+        };
+
+        fetchUsers();
+        fetchOrders();
+    }, [])
+
+
+    const handleDeleteUser = async (id) => {
+        if (!confirm("Remove this user?")) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:5000/api/users/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Failed to delete user: ${errorText}`);
+            }
+
+            setUsers(prev => prev.filter(u => u._id !== id));
+            alert("User deleted successfully!");
+        } catch (err) {
+            console.error("Delete user error:", err);
+            alert(`Failed to delete user: ${err.message}`);
+        }
+    };
+
+    
+
+
+
 
     // Product form state
     const emptyProduct = { id: null, name: "", price: "", stock: "", image: "" };
@@ -167,22 +256,31 @@ export default function AdminAccount() {
 
 
     // Toggle user role
-    const handleToggleRole = (id) => {
-        setUsers((list) =>
-            list.map((u) =>
-                u.id === id
-                    ? { ...u, role: u.role === "Admin" ? "Customer" : "Admin" }
-                    : u
-            )
-        );
-    };
+    const handleToggleRole = async (id) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:5000/api/users/toggle-role/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
 
-    // Delete user
-    const handleDeleteUser = (id) => {
-        if (confirm("Remove this user?")) {
-            setUsers((list) => list.filter((u) => u.id !== id));
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Failed to update role: ${errorText}`);
+            }
+
+            const data = await res.json();
+            setUsers(prev => prev.map(u => (u._id === id ? data.user : u)));
+            alert("Role updated successfully!");
+        } catch (err) {
+            console.error("Toggle role error:", err);
+            alert(`Failed to update role: ${err.message}`);
         }
     };
+
 
     return (
         <div className="min-h-screen bg-pink-50 py-20 px-4 md:px-8">
@@ -545,48 +643,56 @@ export default function AdminAccount() {
                         </section>
                     )}
 
-
-
-
                     {/* ORDERS TAB */}
                     {activeTab === "orders" && (
                         <section className="bg-white rounded-2xl p-6 shadow-sm">
                             <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders</h3>
                             <div className="space-y-3">
-                                {orders.map((o) => {
-                                    const orderedProduct = products.find((p) => p.id === o.productId);
-                                    return (
-                                        <div
-                                            key={o.id}
-                                            className="flex flex-col items-center md:flex-row justify-between bg-rose-50 p-3 rounded-lg"
-                                        >
-                                            <div className="flex flex-col gap-3 text-center md:text-left md:flex-row items-center">
-                                                {orderedProduct?.image && (
-                                                    <img
-                                                        src={orderedProduct.image}
-                                                        alt={orderedProduct.name}
-                                                        className="w-12 h-12 rounded-lg object-cover"
-                                                    />
-                                                )}
-                                                <div>
-                                                    <div className="flex justify-center md:justify-start font-medium text-gray-800">
-                                                        <p>#{o.id}</p>
-                                                        <p>— {o.customer}</p>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1 justify-center md:justify-start md:flex-row text-gray-800">
-                                                        <p>Product: {orderedProduct?.name || "Unknown"}</p>
-                                                        <p>• ${o.total.toFixed(2)}</p>
-                                                        <p>• Status: {o.status}</p>
-                                                    </div>
+                                {orders.length === 0 ? (
+                                    <p className="text-center text-gray-500 py-8">No orders found</p>
+                                ) : (
+                                    orders.map((o) => {
+                                        // Calculate total from products array
+                                        const total = o.product?.reduce((sum, item) => {
+                                            const price = item.product_id?.price || 0;
+                                            const quantity = item.quantity || 1;
+                                            return sum + (price * quantity);
+                                        }, 0) || 0;
 
+                                        const orderedProduct = o.product?.[0]?.product_id;
+
+                                        return (
+                                            <div
+                                                key={o._id}
+                                                className="flex flex-col items-center md:flex-row justify-between bg-rose-50 p-3 rounded-lg"
+                                            >
+                                                <div className="flex flex-col gap-3 text-center md:text-left md:flex-row items-center">
+                                                    {orderedProduct?.image && (
+                                                        <img
+                                                            src={orderedProduct.image}
+                                                            alt={orderedProduct.name}
+                                                            className="w-12 h-12 rounded-lg object-cover"
+                                                        />
+                                                    )}
+                                                    <div>
+                                                        <div className="flex justify-center md:justify-start font-medium text-gray-800">
+                                                            <p>#{o.order_id || o._id.slice(-6)}</p>
+                                                            <p>— {o.username || o.user_id?.username || "Guest"}</p>
+                                                        </div>
+                                                        <div className="flex flex-col gap-1 justify-center md:justify-start md:flex-row text-gray-800">
+                                                            <p>Product: {orderedProduct?.name || "Unknown"}</p>
+                                                            <p>• ${total.toFixed(2)}</p>
+                                                            <p>• ETA: {o.ETA ? new Date(o.ETA).toLocaleDateString() : "N/A"}</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
+                                                <button className="flex items-center mt-4 text-black gap-2 px-3 py-2 bg-white rounded-lg hover:bg-gray-50">
+                                                    <Eye size={14} /> View
+                                                </button>
                                             </div>
-                                            <button className="flex items-center mt-4 text-black gap-2 px-3 py-2 bg-white rounded-lg hover:bg-gray-50">
-                                                <Eye size={14} /> View
-                                            </button>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })
+                                )}
                             </div>
                         </section>
                     )}
@@ -598,34 +704,35 @@ export default function AdminAccount() {
                             <div className="space-y-3">
                                 {users.map((u) => (
                                     <div
-                                        key={u.id}
+                                        key={u._id}
                                         className="flex flex-col items-center justify-between md:flex-row bg-rose-50 p-3 rounded-lg"
                                     >
                                         <div className="flex flex-col items-center text-center md:flex-row md:text-left gap-3">
                                             {u.image && (
                                                 <img
                                                     src={u.image}
-                                                    alt={u.name}
+                                                    alt={`${u.fname} ${u.lname}`}
+
                                                     className="w-12 h-12 rounded-full object-cover"
                                                 />
                                             )}
                                             <div>
-                                                <div className="font-medium text-gray-800">{u.name}</div>
+                                                <div className="font-medium text-gray-800">{`${u.fname} ${u.lname}`}</div>
                                                 <div className="text-sm text-gray-600">
                                                     {u.email} • Role:{" "}
-                                                    <span className="font-semibold">{u.role}</span>
+                                                    <span className="font-semibold">{u.role || "Customer"}</span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => handleToggleRole(u.id)}
+                                                onClick={() => handleToggleRole(u._id)}
                                                 className="px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-50"
                                             >
-                                                {u.role === "Admin" ? "Revoke Admin" : "Make Admin"}
+                                                {u.role === "admin" ? "Revoke Admin" : "Make Admin"}
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteUser(u.id)}
+                                                onClick={() => handleDeleteUser(u._id)}
                                                 className="px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-50"
                                             >
                                                 Remove

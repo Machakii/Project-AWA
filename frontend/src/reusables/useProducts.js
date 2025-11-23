@@ -22,5 +22,41 @@ export default function useProducts() {
     fetchProducts();
   }, []);
 
-  return { products, setProducts, loading };
+  useEffect(() => {
+    async function fetchCart() {
+      try {
+        const response = await fetch("http://localhost:5000/api/cart/all");
+        if (!response.ok) throw new Error("Failed to fetch cart");
+
+        const data = await response.json();
+        setCart(data);
+      } catch (err) {
+        console.error("Error fetching cart:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCart();
+  }, []);
+
+  useEffect(() => {
+    async function fetchWishlist() {
+      try {
+        const response = await fetch("http://localhost:5000/api/wishlist/all");
+        if (!response.ok) throw new Error("Failed to fetch wishlist");
+
+        const data = await response.json();
+        setWishlist(data);
+      } catch (err) {
+        console.error("Error fetching wishlist:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchWishlist();
+  }, []);
+
+  return { products, setProducts,loading };
 }

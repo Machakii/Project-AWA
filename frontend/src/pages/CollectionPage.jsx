@@ -1,22 +1,30 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Heart, Search, ShoppingCart, SlidersHorizontal, X } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import ProductModal from "../components/ProductModal"; // ✅ import your modal
+import ProductModal from "../components/ProductModal";
 import CheckoutModal from "../components/CheckoutModal";
 import useProducts from "../reusables/useProducts";
+import useWishlistContext from "../reusables/useWishlistContext";
 
 const categories = ["All", "Skincare", "Makeup", "Fragrance", "Tools", "Bundle"];
 
 export default function Collection() {
-  const [selectedCategory, setSelectedCategory] = useState("All"); //sa filter
-  const [showFilter, setShowFilter] = useState(false);//sa filter modal
-  const [likedProducts, setLikedProducts] = useState({});//para sa wishlist
-  const [selectedProduct, setSelectedProduct] = useState(null);// product modal
-  const [checkoutProduct, setCheckoutProduct] = useState(null);// checkout modal
-  const {products} = useProducts();
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [showFilter, setShowFilter] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [checkoutProduct, setCheckoutProduct] = useState(null);
+  const { products, loading } = useProducts();
 
-  // function para magfilter
+  // Wishlist context
+  const {
+    wishlist,
+    addToWishlist,
+    removeFromWishlist,
+    isProductWishlisted,
+    findWishlistItemByProductId,
+  } = useWishlistContext();
+
   const filtered =
     selectedCategory === "All"
       ? products
@@ -27,41 +35,36 @@ export default function Collection() {
     setShowFilter(false);
   };
 
-  // para open yung product modal
-   const handleOpenDetails = (product) => {
-    setSelectedProduct(product);
+  const handleToggleWishlist = async (e, product) => {
+    e.stopPropagation(); // prevent opening modal
+    const pid = product._id || product.id;
+
+    const already = isProductWishlisted(pid);
+    if (already) {
+      const wItem = findWishlistItemByProductId(pid);
+      if (wItem) await removeFromWishlist(wItem._id);
+    } else {
+      await addToWishlist(pid);
+    }
   };
 
-  // to close product modal
-  const handleCloseDetails = () => {
-    setSelectedProduct(null);
-  };
-
+  const handleCloseDetails = () => setSelectedProduct(null);
   const handleBuyNow = (product) => {
-    // close product modal first
     setSelectedProduct(null);
-
-    // open checkout modal after short delay for smooth transition
     setTimeout(() => {
       setCheckoutProduct(product);
     }, 200);
   };
-
-  const handleCloseCheckout = () => {
-    setCheckoutProduct(null);
-  };
+  const handleCloseCheckout = () => setCheckoutProduct(null);
 
   return (
     <>
       <Header />
+
       <section className="bg-[#FFF6F3] py-25 px-6">
         <div className="max-w-full mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-semibold text-[#4A3B47]">
-            Our Collection
-          </h2>
-          <p className="text-gray-500 mt-2">
-            Handpicked favorites from our marshmallow collection
-          </p>
+          <h2 className="text-4xl md:text-5xl font-semibold text-[#4A3B47]">Our Collection</h2>
+          <p className="text-gray-500 mt-2">Handpicked favorites from our marshmallow collection</p>
 
           {/* Search + Filter */}
           <div className="flex justify-center mt-5 flex-col md:flex-row gap-5">
@@ -72,10 +75,7 @@ export default function Collection() {
                 placeholder="Search:"
                 className="bg-white w-full sm:w-80 px-4 py-1 border-none placeholder-black-400 text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FDA4AF]"
               />
-              <button
-                type="submit"
-                className="bg-[#FDA4AF] text-white px-4 py-1 rounded-lg hover:opacity-80 cursor-pointer transition font-medium"
-              >
+              <button className="bg-[#FDA4AF] text-white px-4 py-1 rounded-lg hover:opacity-80 cursor-pointer transition font-medium">
                 Search
               </button>
             </div>
@@ -86,8 +86,7 @@ export default function Collection() {
                 className="flex items-center gap-2 cursor-pointer rounded-xl border border-gray-200 px-4 py-2 hover:bg-pink-50 transition text-gray-600"
               >
                 <SlidersHorizontal size={16} />
-                Filter:{" "}
-                <span className="text-[#F4A4B4] font-medium">{selectedCategory}</span>
+                Filter: <span className="text-[#F4A4B4] font-medium">{selectedCategory}</span>
               </button>
             </div>
           </div>
@@ -102,9 +101,7 @@ export default function Collection() {
                 >
                   <X size={18} />
                 </button>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-left">
-                  Select Category
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-left">Select Category</h3>
                 <div className="flex flex-col gap-3">
                   {categories.map((cat) => (
                     <button
@@ -125,74 +122,72 @@ export default function Collection() {
           )}
 
           {/* Product Grid */}
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-500 text-lg font-medium">
+              <p>Loading products...</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-500 text-lg font-medium">
               <p className="italic">No products available in this category</p>
             </div>
           ) : (
             <div className="mt-15 w-full grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filtered.map((product) => (
-                <div
-                  key={product.id}
-                  className="group bg-white rounded-2xl shadow-sm hover:shadow-md transition relative overflow-hidden flex flex-col cursor-pointer"
-                  onClick={() => setSelectedProduct(product)} 
-                >
-                  {product.tag && (
-                    <span
-                      className={`absolute top-3 left-3 text-xs font-medium px-3 py-1 rounded-full ${
-                        product.tag === "Bestseller"
-                          ? "bg-pink-200 text-pink-800"
-                          : "bg-blue-200 text-blue-800"
-                      }`}
-                    >
-                      {product.tag}
-                    </span>
-                  )}
+              {filtered.map((product) => {
+                const pid = product._id || product.id;
+                const liked = isProductWishlisted(pid);
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // prevent modal from opening
-                      setLikedProducts((prev) => ({
-                        ...prev,
-                        [product.id]: !prev[product.id],
-                      }));
-                    }}
-                    className="absolute top-3 right-3 bg-white p-2 rounded-lg hover:bg-pink-100 transition z-10"
+                return (
+                  <div
+                    key={pid}
+                    className="group bg-white rounded-2xl shadow-sm hover:shadow-md transition relative overflow-hidden flex flex-col cursor-pointer"
+                    onClick={() => setSelectedProduct(product)}
                   >
-                    <Heart
-                      className={`w-4 h-4 ${
-                        likedProducts[product.id]
-                          ? "text-pink-500 fill-pink-500"
-                          : "text-gray-700"
-                      }`}
-                    />
-                  </button>
+                    {product.tag && (
+                      <span
+                        className={`absolute top-3 left-3 text-xs font-medium px-3 py-1 rounded-full ${
+                          product.tag === "Bestseller"
+                            ? "bg-pink-200 text-pink-800"
+                            : "bg-blue-200 text-blue-800"
+                        }`}
+                      >
+                        {product.tag}
+                      </span>
+                    )}
 
-                  <div className="overflow-hidden">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-90 object-cover transform transition-transform duration-500 group-hover:scale-110"
-                    />
-                  </div>
+                    {/* Wishlist Heart */}
+                    <button
+                      onClick={(e) => handleToggleWishlist(e, product)}
+                      className="absolute top-3 right-3 bg-white p-2 rounded-lg hover:bg-pink-100 transition z-10"
+                    >
+                      <Heart className={`w-4 h-4 ${liked ? "text-pink-500 fill-pink-500" : "text-gray-700"}`} />
+                    </button>
 
-                  <div className="p-5 text-left">
-                    <p className="text-sm text-gray-500">{product.category}</p>
-                    <h3 className="font-medium text-gray-800 mt-1">{product.name}</h3>
-                    <div className="mt-4 flex items-center justify-between">
-                      <p className="text-pink-600 font-semibold">${product.price}</p>
-                      <button className="flex items-center gap-1 bg-pink-200 hover:bg-pink-300 text-pink-800 px-4 py-2 rounded-full text-sm transition">
-                        <ShoppingCart size={14} />
-                        Add
-                      </button>
+                    <div className="overflow-hidden">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-90 object-cover transform transition-transform duration-500 group-hover:scale-110"
+                      />
+                    </div>
+
+                    <div className="p-5 text-left">
+                      <p className="text-sm text-gray-500">{product.category}</p>
+                      <h3 className="font-medium text-gray-800 mt-1">{product.name}</h3>
+                      <div className="mt-4 flex items-center justify-between">
+                        <p className="text-pink-600 font-semibold">${product.price}</p>
+                        <button className="flex items-center gap-1 bg-pink-200 hover:bg-pink-300 text-pink-800 px-4 py-2 rounded-full text-sm transition">
+                          <ShoppingCart size={14} /> Add
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </section>
+
       <hr className="text-gray-200" />
       <Footer />
 
@@ -201,16 +196,13 @@ export default function Collection() {
         <ProductModal
           product={selectedProduct}
           onClose={handleCloseDetails}
-          onBuyNow={() => handleBuyNow(selectedProduct)}
+          onBuyNow={(p) => handleBuyNow(p)}
         />
       )}
 
       {/* Checkout Modal */}
       {checkoutProduct && (
-        <CheckoutModal
-          product={checkoutProduct}
-          onClose={handleCloseCheckout}
-        />
+        <CheckoutModal product={checkoutProduct} onClose={handleCloseCheckout} />
       )}
     </>
   );

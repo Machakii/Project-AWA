@@ -15,7 +15,7 @@ export default function Hero({ scrollToStory }) {
   }, []);
 
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center text-center bg-gradient-to-br from-pink-200 via-rose-50 to-amber-50 px-6">
+    <section className="min-h-screen flex flex-col items-center p-10 md:p-0 justify-center text-center bg-gradient-to-br from-pink-200 via-rose-50 to-amber-50 px-6">
 
       {/*Icon Circle */}
       <div className="mb-6 flex items-center justify-center w-20 h-20 rounded-full bg-[#f5dcdeff]">
@@ -24,7 +24,7 @@ export default function Hero({ scrollToStory }) {
 
       {/* Title */}
       <h1
-        className={`text-6xl md:text-7xl text-[#4A3B47] mb-4 transition-opacity duration-1000 ${
+        className={`text-4xl md:text-7xl text-[#4A3B47] mb-4 transition-opacity duration-1000 ${
           visible ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -33,7 +33,7 @@ export default function Hero({ scrollToStory }) {
 
       {/* Subtitle */}
       <p
-        className={`text-xl md:text-2xl text-gray-500 mb-6 transition-opacity duration-1500 delay-300 ${
+        className={`text-lg md:text-2xl text-gray-500 mb-6 transition-opacity duration-1500 delay-300 ${
           visible ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -42,7 +42,7 @@ export default function Hero({ scrollToStory }) {
 
       {/* Description */}
       <p
-        className={`max-w-xl text-lg text-gray-500 mb-10 leading-relaxed transition-opacity duration-1500 delay-500 ${
+        className={`max-w-xl text-sm md:text-lg text-gray-500 mb-10 leading-relaxed transition-opacity duration-1500 delay-500 ${
           visible ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -51,13 +51,13 @@ export default function Hero({ scrollToStory }) {
 
       {/* Buttons */}
       <div
-        className={`flex gap-4 transition-opacity duration-1500 delay-700 ${
+        className={`flex flex-col md:flex-row gap-4 transition-opacity duration-1500 delay-700 ${
           visible ? "opacity-100" : "opacity-0"
         }`}
       >
         <button
           onClick={handleExploreClick}
-          className="group bg-[#F4A4B4] text-[#4A3B47] cursor-pointer text-lg px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-sm hover:shadow-md flex items-center gap-2"
+          className="group bg-[#F4A4B4] text-[#4A3B47] cursor-pointer text-sm md:text-lg px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-sm hover:shadow-md flex items-center gap-2"
         >
           Explore Collection
           <span className="transition-transform duration-300 group-hover:translate-x-1 text-xl">
@@ -67,7 +67,7 @@ export default function Hero({ scrollToStory }) {
 
         <button
           onClick={scrollToStory}
-          className="bg-[#FFF7ED] border border-[#FFE4E6] cursor-pointer text-[#4A3B47] text-lg font-medium px-9 py-3 font-semibold rounded-xl transition-all duration-300 hover:bg-[#FFE4E6] hover:border-pink-300 hover:shadow-sm"
+          className="bg-[#FFF7ED] border border-[#FFE4E6] cursor-pointer text-[#4A3B47] text-sm md:text-lg font-medium px-9 py-3 font-semibold rounded-xl transition-all duration-300 hover:bg-[#FFE4E6] hover:border-pink-300 hover:shadow-sm"
         >
           Our Story
         </button>
