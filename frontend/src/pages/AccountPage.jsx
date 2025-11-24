@@ -497,85 +497,100 @@ export default function AccountPage() {
 
             {/* ORDERS TAB */}
             {activeTab === "orders" && (
+  <div className="space-y-6">
+    {ordersLoading ? (
+      <div className="flex justify-center items-center h-32">
+        <p className="text-gray-500">Loading orders...</p>
+      </div>
+    ) : userOrders.length === 0 ? (
+      <div className="flex flex-col justify-center items-center h-32 text-gray-500">
+        <Package size={40} className="mb-2 text-gray-400" />
+        <p className="text-lg font-medium italic">You have no orders yet.</p>
+        <p className="text-sm mt-1">Start shopping to place your first order!</p>
+      </div>
+    ) : (
+      userOrders.map((order) => (
+        <div key={order._id} className="border border-rose-100 rounded-xl p-5 bg-white">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+            <h4 className="font-semibold text-gray-800 mb-2 sm:mb-0">
+              Order {order.order_id}
+            </h4>
+            <span
+              className={`text-xs px-3 py-1 rounded-full font-medium ${
+                order.status === "Processing"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : order.status === "Shipped"
+                  ? "bg-blue-100 text-blue-800"
+                  : "bg-green-100 text-green-800"
+              }`}
+            >
+              {order.status}
+            </span>
+          </div>
 
-              <div className="space-y-6">
-                {ordersLoading ? (
-                  <div className="flex justify-center items-center h-32">
-                    <p className="text-gray-500">Loading orders...</p>
+          <p className="text-sm text-gray-500 mb-4">
+            {new Date(order.eta).toLocaleDateString()}
+          </p>
+
+          {/* Products */}
+          <div className="space-y-3">
+            {order.product.map((item, index) => (
+              <div key={index} className="flex justify-between items-center flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={item.product_id?.image || fragrance1}
+                    alt={item.product_id?.name}
+                    className="w-12 h-12 rounded-md object-cover"
+                  />
+                  <div>
+                    <p className="font-medium text-gray-700">
+                      {item.product_id?.name || "Unknown Product"}
+                    </p>
+                    <p className="text-sm text-gray-500">Qty: {item.amount}</p>
                   </div>
-                ) : userOrders.length === 0 ? (
-                  <div className="flex flex-col justify-center items-center h-32 text-gray-500">
-                    <Package size={40} className="mb-2 text-gray-400" />
-                    <p className="text-lg font-medium italic">You have no orders yet.</p>
-                    <p className="text-sm mt-1">Start shopping to place your first order!</p>
-                  </div>
-                ) : (
-                  userOrders.map((order) => (
-                    <div key={order.id} className="border border-rose-100 rounded-xl p-5 bg-white">
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
-                        <h4 className="font-semibold text-gray-800 mb-2 sm:mb-0">Order {order.id}</h4>
-                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${order.statusColor}`}>
-                          {order.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 mb-4">{order.date}</p>
-
-                      ```
-                      <div className="space-y-3">
-                        {order.items.map((item, index) => (
-                          <div key={index} className="flex justify-between items-center flex-wrap gap-3">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={item.img || fragrance1}
-                                alt={item.name}
-                                className="w-12 h-12 rounded-md object-cover"
-                              />
-                              <div>
-                                <p className="font-medium text-gray-700">{item.name}</p>
-                                <p className="text-sm text-gray-500">Qty: {item.qty}</p>
-                              </div>
-                            </div>
-                            <p className="text-gray-800">
-                              ${(item.qty * item.price).toFixed(2)}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="border-t mt-4 pt-3 flex justify-between text-sm text-gray-600">
-                        <span>Total</span>
-                        <span className="text-rose-500 font-semibold">
-                          ${order.total.toFixed(2)}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                        <button
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setModalType("details");
-                          }}
-                          className="flex-1 bg-rose-100 py-2 rounded-lg text-gray-700 hover:bg-rose-200 transition"
-                        >
-                          View Details
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setModalType("tracking");
-                          }}
-                          className="flex-1 bg-rose-100 py-2 rounded-lg text-gray-700 hover:bg-rose-200 transition"
-                        >
-                          Track Order
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-                ```
-
+                </div>
+                <p className="text-gray-800">
+                  ${(item.price * item.amount).toFixed(2)}
+                </p>
               </div>
-            )}
+            ))}
+          </div>
+
+          <div className="border-t mt-4 pt-3 flex justify-between text-sm text-gray-600">
+            <span>Total</span>
+            <span className="text-rose-500 font-semibold">
+              ${order.product
+                .reduce((sum, i) => sum + i.price * i.amount, 0)
+                .toFixed(2)}
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <button
+              onClick={() => {
+                setSelectedOrder(order);
+                setModalType("details");
+              }}
+              className="flex-1 bg-rose-100 py-2 rounded-lg text-gray-700 hover:bg-rose-200 transition"
+            >
+              View Details
+            </button>
+            <button
+              onClick={() => {
+                setSelectedOrder(order);
+                setModalType("tracking");
+              }}
+              className="flex-1 bg-rose-100 py-2 rounded-lg text-gray-700 hover:bg-rose-200 transition"
+            >
+              Track Order
+            </button>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+)}
+
 
 
 

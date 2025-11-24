@@ -10,7 +10,10 @@ import useWishlistContext from "../reusables/useWishlistContext";
 const categories = ["All", "Skincare", "Makeup", "Fragrance", "Tools", "Bundle"];
 
 export default function FeaturedProducts() {
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const initialCategory = params.get("category") || "All";
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [showFilter, setShowFilter] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [checkoutProduct, setCheckoutProduct] = useState(null);

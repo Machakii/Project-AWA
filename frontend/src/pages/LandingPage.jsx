@@ -3,10 +3,14 @@ import SignatureCollection from "../components/Signature";
 import Story from "../components/Story";
 import { useRef } from "react";
 import Whywe from "../components/Whywe";
+import { CartContext } from "../context/CartContext";
+import useWishlistContext from "../reusables/useWishlistContext";
 
 
 export default function LandingPage() {
     const storyRef = useRef(null);
+     
+      
 
     return (
         <>

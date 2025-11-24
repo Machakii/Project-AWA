@@ -1,5 +1,7 @@
+
 import { FaInstagram, FaFacebookF, FaTwitter, FaEnvelope } from "react-icons/fa";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
 
@@ -59,10 +61,26 @@ export default function Footer() {
           <div>
             <h3 className="mb-3 text-m sm:text-base">Shop</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="#" className="hover:text-[#FDA4AF] transition">All Products</a></li>
-              <li><a href="#" className="hover:text-[#FDA4AF] transition">Skincare</a></li>
-              <li><a href="#" className="hover:text-[#FDA4AF] transition">Makeup</a></li>
-              <li><a href="#" className="hover:text-[#FDA4AF] transition">Bestsellers</a></li>
+              <li>
+                <Link to="/shop" className="hover:text-[#FDA4AF] transition">
+                  All Products
+                </Link>
+              </li>
+              <li>
+                <Link to="/shop?category=Skincare" className="hover:text-[#FDA4AF] transition">
+                  Skincare
+                </Link>
+              </li>
+              <li>
+                <Link to="/shop?category=Makeup" className="hover:text-[#FDA4AF] transition">
+                  Makeup
+                </Link>
+              </li>
+              <li>
+                <Link to="/bestseller" className="hover:text-[#FDA4AF] transition">
+                  Bestsellers
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -70,10 +88,10 @@ export default function Footer() {
           <div>
             <h3 className="mb-3 text-m sm:text-base">Support</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="#" className="hover:text-[#FDA4AF] transition">Contact Us</a></li>
-              <li><a href="#" className="hover:text-[#FDA4AF] transition">Shipping Info</a></li>
-              <li><a href="#" className="hover:text-[#FDA4AF] transition">Returns</a></li>
-              <li><a href="#" className="hover:text-[#FDA4AF] transition">FAQ</a></li>
+              <li><Link to="/about#contact" className="hover:text-[#FDA4AF] transition">Contact Us</Link></li>
+              <li><Link to="/about#shipping" className="hover:text-[#FDA4AF] transition">Shipping Info</Link></li>
+              <li><Link to="/about#returns" className="hover:text-[#FDA4AF] transition">Returns</Link></li>
+              <li><Link to="/about#FAQ" className="hover:text-[#FDA4AF] transition">FAQ</Link></li>
             </ul>
           </div>
 
@@ -82,28 +100,28 @@ export default function Footer() {
             <h3 className=" mb-3 text-m sm:text-base">Connect</h3>
             <div className="flex justify-center md:justify-start space-x-4 text-[#FDA4AF]">
               <a
-                href="#"
+                href="https://www.instagram.com/"
                 className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center hover:bg-pink-200 transition"
                 aria-label="Instagram"
               >
                 <FaInstagram className="text-xl" />
               </a>
               <a
-                href="#"
+                href="https://www.facebook.com/"
                 className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center hover:bg-pink-200 transition"
                 aria-label="Facebook"
               >
                 <FaFacebookF className="text-lg" />
               </a>
               <a
-                href="#"
+                href="https://x.com/"
                 className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center hover:bg-pink-200 transition"
                 aria-label="Twitter"
               >
                 <FaTwitter className="text-xl" />
               </a>
               <a
-                href="#"
+                href="https://telegram.org/"
                 className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center hover:bg-pink-200 transition"
                 aria-label="Email"
               >
@@ -127,3 +145,4 @@ export default function Footer() {
     </>
   );
 }
+
