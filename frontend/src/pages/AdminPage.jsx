@@ -21,10 +21,19 @@ export default function AdminAccount() {
     const { products, setProducts } = useProducts();
     const [users, setUsers] = useState([]);
     const [orders, setOrders] = useState([]);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [orderModalOpen, setOrderModalOpen] = useState(false);
+
 
     const navigate = useNavigate();
 
     const storedUser = JSON.parse(localStorage.getItem("user"));
+
+    const handleViewOrder = (order) => {
+        setSelectedOrder(order);
+        setOrderModalOpen(true);
+    };
+
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -130,7 +139,7 @@ export default function AdminAccount() {
         }
     };
 
-    
+
 
 
 
@@ -652,11 +661,11 @@ export default function AdminAccount() {
                                     <p className="text-center text-gray-500 py-8">No orders found</p>
                                 ) : (
                                     orders.map((o) => {
-                                        // Calculate total from products array
+                                        // Calculate total from products array using price field
                                         const total = o.product?.reduce((sum, item) => {
-                                            const price = item.product_id?.price || 0;
-                                            const quantity = item.quantity || 1;
-                                            return sum + (price * quantity);
+                                            const price = item.price || 0;
+                                            const amount = item.amount || 1;
+                                            return sum + (price * amount);
                                         }, 0) || 0;
 
                                         const orderedProduct = o.product?.[0]?.product_id;
@@ -676,25 +685,36 @@ export default function AdminAccount() {
                                                     )}
                                                     <div>
                                                         <div className="flex justify-center md:justify-start font-medium text-gray-800">
-                                                            <p>#{o.order_id || o._id.slice(-6)}</p>
+                                                            <p>{o.order_id || `#${o._id.slice(-6)}`}</p>
                                                             <p>— {o.username || o.user_id?.username || "Guest"}</p>
                                                         </div>
                                                         <div className="flex flex-col gap-1 justify-center md:justify-start md:flex-row text-gray-800">
-                                                            <p>Product: {orderedProduct?.name || "Unknown"}</p>
+                                                            <p>
+                                                                {o.product?.length > 1
+                                                                    ? `${o.product.length} items`
+                                                                    : `Product: ${orderedProduct?.name || "Unknown"}`}
+                                                            </p>
                                                             <p>• ${total.toFixed(2)}</p>
-                                                            <p>• ETA: {o.ETA ? new Date(o.ETA).toLocaleDateString() : "N/A"}</p>
+                                                            <p>• Status: {o.status || "Processing"}</p>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <button className="flex items-center mt-4 text-black gap-2 px-3 py-2 bg-white rounded-lg hover:bg-gray-50">
+                                                <button
+                                                    onClick={() => handleViewOrder(o)}
+                                                    className="flex items-center mt-4 text-black gap-2 px-3 py-2 bg-white rounded-lg hover:bg-gray-50"
+                                                >
                                                     <Eye size={14} /> View
                                                 </button>
+
                                             </div>
                                         );
                                     })
                                 )}
                             </div>
                         </section>
+
+
+
                     )}
 
                     {/* USERS TAB */}
@@ -743,6 +763,81 @@ export default function AdminAccount() {
                             </div>
                         </section>
                     )}
+
+                    {orderModalOpen && selectedOrder && (
+                        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 px-4">
+                            <div className="bg-white w-full max-w-md rounded-xl p-6 shadow-lg relative">
+
+                                {/* Close Button */}
+                                <button
+                                    onClick={() => setOrderModalOpen(false)}
+                                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                                >
+                                    ✕
+                                </button>
+
+                                <h3 className="text-xl font-semibold mb-4 text-gray-800">Order Details</h3>
+
+                                {/* Order Info */}
+                                <p><strong>Order ID:</strong> {selectedOrder.order_id}</p>
+                                <p><strong>Customer:</strong> {selectedOrder.username || "Guest"}</p>
+                                <p><strong>Status:</strong> {selectedOrder.status}</p>
+                                {/* <p><strong>Shipping Address:</strong> {selectedOrder.shipping_address || "N/A"}</p> */}
+
+                                {/* ETA */}
+                                <p>
+                                    <strong>ETA:</strong>{" "}
+                                    {selectedOrder.eta
+                                        ? new Date(selectedOrder.eta).toLocaleDateString()
+                                        : "Not available"}
+                                </p>
+
+                                {/* Products */}
+                                <div className="space-y-2">
+                                    {selectedOrder.product.map((item, index) => {
+                                        const product = item.product_id; // populated product
+
+                                        return (
+                                            <div key={index} className="flex justify-between bg-rose-50 p-2 rounded-lg">
+
+                                                {/* PRODUCT NAME (safe fallback in case populate failed) */}
+                                                <span>
+                                                    {product?.name ||
+                                                        product?.productName ||
+                                                        product?.title ||
+                                                        "Unknown Product"}
+                                                </span>
+
+                                                <span>x{item.amount}</span>
+
+                                                {/* DISPLAY CALCULATED PRICE */}
+                                                <span>${(item.price * item.amount).toFixed(2)}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+
+                                {/* Total Price */}
+                                <div className="mt-4 text-right font-semibold text-gray-800">
+                                    Total: $
+                                    {selectedOrder.product
+                                        .reduce((sum, i) => sum + i.price * i.amount, 0)
+                                        .toFixed(2)}
+                                </div>
+
+                                {/* Close Button */}
+                                <button
+                                    onClick={() => setOrderModalOpen(false)}
+                                    className="mt-6 bg-rose-100 text-gray-800 w-full py-2 rounded-lg hover:bg-rose-200"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+
 
                 </main>
             </div>
