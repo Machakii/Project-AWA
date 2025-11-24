@@ -6,6 +6,7 @@ import ProductModal from "./ProductModal";
 import CheckoutModal from "./CheckoutModal";
 import useProducts from "../reusables/useProducts";
 import useWishlistContext from "../reusables/useWishlistContext";
+import { useParams, useLocation } from "react-router-dom";
 
 const categories = ["All", "Skincare", "Makeup", "Fragrance", "Tools", "Bundle"];
 
