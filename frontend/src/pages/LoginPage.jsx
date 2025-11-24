@@ -132,7 +132,7 @@ function LoginForm({ showPassword, setShowPassword }) {
       if (res.data.role === "admin") {
         navigate("/admin"); // admin redirect
       } else {
-        navigate("/landing"); // user redirect
+        navigate("/"); // user redirect
       }
 
       alert(`Welcome back, ${res.data.fname || "user"}!`);

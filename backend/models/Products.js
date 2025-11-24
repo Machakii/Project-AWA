@@ -11,12 +11,13 @@ const productSchema = new mongoose.Schema({
     reviews: Number,
     note: String,
     returnPolicy: String,
+    stock: Number,
     sizes: [
     {
       id: Number,
       label: String,
       price: Number,
-      stock: Number
+      stock: { type: Number, default: 1 }
     }
   ]
 });

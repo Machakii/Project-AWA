@@ -19,9 +19,9 @@ export default function App() {
       <CartProvider>
         <WishlistProvider>
           <Routes>
-            <Route path="/" element={<AuthPage />} />
+            <Route path="/login" element={<AuthPage />} />
             <Route path="/admin" element={<AdminAccount />} />
-            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/user-acc" element={<AccountPage />} />
             <Route path="/shop" element={<FeaturedProducts />} />

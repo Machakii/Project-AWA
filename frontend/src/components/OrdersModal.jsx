@@ -1,11 +1,13 @@
 import React from "react";
 import { X, FileText, Truck, Home, Package, Brush } from "lucide-react";
 
-export default function OrderTrackingModal({ onClose, modalType, order }) {
+export default function OrderTrackingModal({ closeModal, type, order }) {
   if (!order) return null;
 
+  // Your AccountPage transforms data into "order.items", so use that safely:
   const firstItem = order.items?.[0] || {};
 
+  // Steps
   const steps = [
     { icon: FileText, label: "Order Processed" },
     { icon: Brush, label: "Order Designing" },
@@ -19,20 +21,22 @@ export default function OrderTrackingModal({ onClose, modalType, order }) {
     statusLower.includes(step.label.toLowerCase().replace("order ", ""))
   );
 
-  // ETA does not exist in your data → use order.date or fallback
-  const formattedETA = order.date || "Date unavailable";
+  const formattedETA =
+    order.date ||
+    order.eta ||
+    "Date unavailable";
 
   /* -------------------------------------------------------
       TRACKING MODAL
   ------------------------------------------------------- */
-  if (modalType === "tracking") {
+  if (type === "tracking") {
     return (
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="bg-white w-full max-w-3xl rounded-2xl shadow-lg p-8 relative border border-[#FFE5EC]">
 
           <button
             className="absolute top-4 right-4 text-gray-500 hover:text-[#F4A4B4]"
-            onClick={onClose}
+            onClick={closeModal}
           >
             <X size={22} />
           </button>
@@ -40,7 +44,7 @@ export default function OrderTrackingModal({ onClose, modalType, order }) {
           {/* HEADER */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-[#F4A4B4]">
-              ORDER <span className="text-gray-800">{order.id}</span>
+              ORDER <span className="text-gray-800">{order.order_id}</span>
             </h2>
 
             <p className="text-gray-500 text-sm">
@@ -56,7 +60,9 @@ export default function OrderTrackingModal({ onClose, modalType, order }) {
             <div
               className="absolute top-1/2 left-0 h-1 bg-[#F4A4B4] rounded-full transition-all duration-500"
               style={{
-                width: `${((activeStep >= 0 ? activeStep : 0) / (steps.length - 1)) * 100}%`,
+                width: `${
+                  ((activeStep >= 0 ? activeStep : 0) / (steps.length - 1)) * 100
+                }%`,
               }}
             />
 
@@ -86,7 +92,7 @@ export default function OrderTrackingModal({ onClose, modalType, order }) {
           <div className="flex justify-end">
             <button
               className="px-4 py-2 bg-[#F4A4B4] text-white rounded-lg hover:bg-[#ffb5c4] transition"
-              onClick={onClose}
+              onClick={closeModal}
             >
               Close
             </button>
@@ -100,14 +106,14 @@ export default function OrderTrackingModal({ onClose, modalType, order }) {
   /* -------------------------------------------------------
       DETAILS MODAL
   ------------------------------------------------------- */
-  if (modalType === "details") {
+  if (type === "details") {
     return (
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="bg-white w-full max-w-md rounded-2xl shadow-lg p-6 relative border border-[#FFE5EC]">
 
           <button
             className="absolute top-3 right-3 text-gray-500 hover:text-[#F4A4B4]"
-            onClick={onClose}
+            onClick={closeModal}
           >
             <X size={20} />
           </button>
@@ -117,17 +123,15 @@ export default function OrderTrackingModal({ onClose, modalType, order }) {
           </h3>
 
           <ul className="text-gray-600 space-y-2">
-            <li><strong>Order ID:</strong> {order.id}</li>
+            <li><strong>Order ID:</strong> {order.order_id}</li>
             <li><strong>Status:</strong> {order.status}</li>
             <li><strong>Expected Arrival:</strong> {formattedETA}</li>
-
-            {/* Shipping address does NOT exist, so remove it */}
           </ul>
 
           <div className="flex justify-end mt-6">
             <button
               className="px-4 py-2 bg-[#F4A4B4] text-white rounded-lg hover:bg-[#ffb5c4] transition"
-              onClick={onClose}
+              onClick={closeModal}
             >
               Close
             </button>

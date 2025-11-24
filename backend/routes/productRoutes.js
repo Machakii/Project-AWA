@@ -8,23 +8,24 @@ const path = require("path");
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
   filename: (req, file, cb) =>
-    cb(null, Date.now() + path.extname(file.originalname))
+    cb(null, Date.now() + path.extname(file.originalname)),
 });
 
 const upload = multer({ storage });
+
 
 // ADD PRODUCT
 router.post("/add", upload.single("image"), async (req, res) => {
   try {
     const productData = {
       ...req.body,
-      image: req.file
-        ? `http://localhost:5000/uploads/${req.file.filename}`
-        : null,
-      sizes: req.body.sizes ? JSON.parse(req.body.sizes) : []
+      image: req.file ? `http://localhost:5000/uploads/${req.file.filename}` : null,
+      sizes: req.body.sizes ? JSON.parse(req.body.sizes) : [],
+      price: Number(req.body.price),
+      stock: Number(req.body.stock)
     };
 
-    const newProduct = new Product({productData});
+    const newProduct = new Product(productData);
     const savedProduct = await newProduct.save();
     res.status(201).json(savedProduct);
   } catch (err) {
@@ -32,7 +33,8 @@ router.post("/add", upload.single("image"), async (req, res) => {
   }
 });
 
-// GET ALL PRODUCTS
+
+// GET ALL
 router.get("/all", async (req, res) => {
   try {
     const products = await Product.find();
@@ -42,12 +44,15 @@ router.get("/all", async (req, res) => {
   }
 });
 
+
 // UPDATE PRODUCT
 router.put("/edit/:id", upload.single("image"), async (req, res) => {
   try {
     const updateData = {
       ...req.body,
-      sizes: req.body.sizes ? JSON.parse(req.body.sizes) : []
+      sizes: req.body.sizes ? JSON.parse(req.body.sizes) : [],
+      price: Number(req.body.price),
+      stock: Number(req.body.stock)
     };
 
     if (req.file) {
@@ -63,6 +68,7 @@ router.put("/edit/:id", upload.single("image"), async (req, res) => {
     res.status(500).json({ error: "Failed to update product" });
   }
 });
+
 
 // DELETE PRODUCT
 router.delete("/delete/:id", async (req, res) => {

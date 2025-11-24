@@ -38,7 +38,7 @@ export default function AdminAccount() {
     const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        navigate("/");
+        navigate("/login");
     };
 
     useEffect(() => {
@@ -205,11 +205,19 @@ export default function AdminAccount() {
         setProductForm({
             id: p._id,
             name: p.name,
+            category: p.category || "",
             price: String(p.price),
             stock: String(p.stock),
-            image: p.image,
+            tag: p.tag || "",
+            description: p.description || "",
+            note: p.note || "",
+            returnPolicy: p.returnPolicy || "",
+            sizes: p.sizes || [],
+            image: p.image
         });
+        setModalOpen(true);
     };
+
 
     // Save edited product
     const handleSaveEdit = async () => {
@@ -217,8 +225,9 @@ export default function AdminAccount() {
             const formData = new FormData();
             formData.append("name", productForm.name);
             formData.append("category", productForm.category || "");
-            formData.append("price", productForm.price);
-            formData.append("stock", productForm.stock);
+            formData.append("price", Number(productForm.price));
+            formData.append("stock", Number(productForm.stock));
+
             formData.append("tag", productForm.tag || "");
             formData.append("description", productForm.description || "");
             formData.append("note", productForm.note || "");
@@ -574,8 +583,11 @@ export default function AdminAccount() {
                                                     {/* Sizes */}
                                                     <div className="col-span-2">
                                                         <label className="font-medium text-gray-700 mb-1 block">Sizes</label>
+
                                                         {productForm.sizes?.map((size, idx) => (
                                                             <div key={idx} className="flex gap-2 mb-2">
+
+                                                                {/* Label */}
                                                                 <input
                                                                     value={size.label}
                                                                     onChange={(e) => {
@@ -586,11 +598,13 @@ export default function AdminAccount() {
                                                                     className="px-3 py-2 text-black rounded-lg border flex-1"
                                                                     placeholder="Label (e.g., Small)"
                                                                 />
+
+                                                                {/* Price */}
                                                                 <input
                                                                     value={size.price}
                                                                     onChange={(e) => {
                                                                         const newSizes = [...productForm.sizes];
-                                                                        newSizes[idx].price = e.target.value;
+                                                                        newSizes[idx].price = Number(e.target.value);
                                                                         setProductForm({ ...productForm, sizes: newSizes });
                                                                     }}
                                                                     className="px-3 py-2 text-black rounded-lg border w-24"
@@ -598,6 +612,22 @@ export default function AdminAccount() {
                                                                     type="number"
                                                                     step="0.01"
                                                                 />
+
+                                                                {/* Stock */}
+                                                                <input
+                                                                    value={size.stock}
+                                                                    onChange={(e) => {
+                                                                        const newSizes = [...productForm.sizes];
+                                                                        newSizes[idx].stock = Number(e.target.value);
+                                                                        setProductForm({ ...productForm, sizes: newSizes });
+                                                                    }}
+                                                                    className="px-3 py-2 text-black rounded-lg border w-20"
+                                                                    placeholder="Stock"
+                                                                    type="number"
+                                                                    min="0"
+                                                                />
+
+                                                                {/* Remove size */}
                                                                 <button
                                                                     onClick={() => {
                                                                         const newSizes = productForm.sizes.filter((_, i) => i !== idx);
@@ -609,9 +639,14 @@ export default function AdminAccount() {
                                                                 </button>
                                                             </div>
                                                         ))}
+
+                                                        {/* Add Size */}
                                                         <button
                                                             onClick={() => {
-                                                                const newSizes = [...(productForm.sizes || []), { id: Date.now(), label: "", price: "" }];
+                                                                const newSizes = [
+                                                                    ...(productForm.sizes || []),
+                                                                    { id: Date.now(), label: "", price: 0, stock: 30 }
+                                                                ];
                                                                 setProductForm({ ...productForm, sizes: newSizes });
                                                             }}
                                                             className="px-3 py-2 bg-rose-100 rounded-lg hover:bg-rose-200 text-gray-700 text-sm"
@@ -619,6 +654,7 @@ export default function AdminAccount() {
                                                             Add Size
                                                         </button>
                                                     </div>
+
                                                 </div>
                                             </div>
                                         </div>

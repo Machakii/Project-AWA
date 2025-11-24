@@ -183,7 +183,7 @@ export default function Header() {
               {menuOpen ? <FaTimes /> : <FaBars />}
             </button>
             <h1 className="text-[#FDA4AF] font-semibold text-m sm:text-xl md:text-2xl">
-              <Link to="/landing">Marshmallow Beauty</Link>
+              <Link to="/">Marshmallow Beauty</Link>
             </h1>
           </div>
 
